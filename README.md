@@ -1,5 +1,7 @@
 ## Mouse store KELOT
  職業訓練校の卒業制作としてチームで制作を行った架空のWebサイトです。  
+ * 顧客向けトップページ -> index.php  
+ * 管理者向けトップページ -> admin-index.php  
  <br>
  
 ## 制作期間
