@@ -30,8 +30,11 @@ $software = getMasterData($pdo, 24);    // ソフトウェア
 $materials = getMasterData($pdo, 18);   // 素材
 $surface_finishes = getMasterData($pdo, 19); // 表面仕上げ
 
-// 税率取得
-$tax_sql = $pdo->prepare('SELECT tax_id, tax FROM tax WHERE tax_end_date IS NULL ORDER BY tax_id');
+// 税率取得（本日時点で有効な税率）
+$tax_sql = $pdo->prepare('SELECT tax_id, tax FROM tax 
+    WHERE tax_start_date <= CURDATE() 
+      AND (tax_end_date IS NULL OR tax_end_date > CURDATE())
+    ORDER BY tax_id');
 $tax_sql->execute();
 $tax_rates = $tax_sql->fetchAll();
 
@@ -463,6 +466,35 @@ unset($_SESSION['product_add_data']);
                     <div class="form-help">
                         <i class="fas fa-info-circle"></i>
                         画像1はメイン画像として使用されます。JPEGファイルのみ対応（推奨サイズ: 800x800px）
+                    </div>
+                </div>
+
+                <!-- 商品説明（detail.php 用） -->
+                <div class="admin-card">
+                    <h3><i class="fas fa-file-alt"></i> 商品説明（詳細ページ表示）</h3>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">商品概要（短文）</label>
+                        <textarea name="product_overview" class="admin-input" rows="4" placeholder="例: 近未来的なデザインと49gの軽量ボディ。競技レベルの精度と応答性を両立した万能マウスです。"><?= h($form_data['product_overview'] ?? '') ?></textarea>
+                        <div class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            商品ページの冒頭に表示される短い説明です。2〜4行を目安に入力してください。
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">商品詳細レビュー（段落は「■」で区切り）</label>
+                        <textarea name="product_detailed_review" class="admin-input" rows="14" placeholder="例:
+■ シェル
+マグネシウム合金フレームで高い剛性。
+■ コーティング
+滑りにくいマット仕様で長時間使用にも最適。
+■ 性能
+32000DPI / 8KHz対応でプロレベルの精度。"><?= h($form_data['product_detailed_review'] ?? '') ?></textarea>
+                        <div class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            detail.php では「■」で段落を分割して見出しとして表示します。太字見出しを付けたい箇所の先頭に半角の「■」を入れてください。
+                        </div>
                     </div>
                 </div>
             </div>

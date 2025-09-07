@@ -2,7 +2,7 @@
 session_start();
 require 'common.php';
 require 'header.php';
-require 'menu.php';
+
 
 function echo_product_card($row, $rank, $pdo, $recommend_badge = false, $sale_badge = false) {
     $images = getImage($row['id'], $pdo);
@@ -131,7 +131,243 @@ function echo_product_card($row, $rank, $pdo, $recommend_badge = false, $sale_ba
     echo '</div>';
     echo '</div>';
 }
+// シンプルな商品カード（画像・商品名・価格・バッジ・詳細ボタンのみ）
+function echo_simple_product_card($row, $rank, $pdo, $recommend_badge = false, $sale_badge = false) {
+	$images = getImage($row['id'], $pdo);
+	$id = $row['id'];
+	$image_path = "images/{$images[0]}.jpg";
+	if (!file_exists($image_path)) {
+		$image_path = "images/no-image.jpg";
+	}
+
+	echo '<div class="product-card">';
+	echo '<div class="product-image">';
+	if ($rank) {
+		echo '<div class="rank-badge rank-', $rank, '">', $rank, '位</div>';
+	} elseif ($recommend_badge) {
+		echo '<div class="product-badge recommend">おすすめ</div>';
+	} elseif ($sale_badge) {
+		echo '<div class="product-badge sale">SALE</div>';
+	}
+	echo '<a href="detail.php?id=', $id, '">';
+	echo '<img src="', $image_path, '" alt="', h($row['name']), '" loading="lazy">';
+	echo '</a>';
+	echo '</div>';
+
+	echo '<div class="product-info">';
+	echo '<h3 class="product-title">';
+	echo '<a href="detail.php?id=', $id, '">', h($row['name']), '</a>';
+	echo '</h3>';
+
+	echo '<div class="price-wrapper">';
+	echo '<div class="product-price">¥', number_format($row['price']), '</div>';
+	echo '</div>';
+
+	echo '<div class="product-actions" style="text-align:center; padding: 8px 0;">';
+	echo '<a href="detail.php?id=', $id, '" class="btn" style="display:inline-block; min-width: 180px; height: 44px; line-height: 44px; padding: 0 16px; background: var(--primary-color); color: #fff; border-radius: 10px; font-weight: 600; text-decoration: none; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateX(-6px);">';
+	echo '<i class="fas fa-info-circle" style="margin-right:8px;"></i>商品詳細へ';
+	echo '</a>';
+	echo '</div>';
+	echo '</div>';
+	echo '</div>';
+}
 ?>
+
+<section class="kelot-intro">
+    <div class="container">
+        <div class="intro-content">
+            <div class="intro-text">
+                <h2 class="intro-title">KELOTとは</h2>
+                <p class="intro-description">
+                    プロゲーマーから一般ユーザーまで、すべてのゲーマーに最高のパフォーマンスを提供する
+                    ゲーミングデバイス専門ストアです。厳選された高品質な製品のみを取り扱い、
+                    あなたのゲーミング体験を次のレベルへと押し上げます。
+                </p>
+            </div>
+            
+            <div class="intro-features">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>プロ品質</h3>
+                    <p>eスポーツで実証された<br>高性能デバイス</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>最新技術</h3>
+                    <p>業界最先端の<br>テクノロジーを搭載</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3>安心サポート</h3>
+                    <p>購入後も充実した<br>サポート体制</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* KELOT紹介セクション */
+.kelot-intro {
+    padding: 4rem 0;
+    background: linear-gradient(135deg, var(--background-secondary) 0%, #f0f9ff 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.intro-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.intro-text {
+    max-width: 500px;
+}
+
+.intro-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.intro-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 2px;
+}
+
+.intro-description {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.intro-features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    border: 1px solid var(--border-color);
+}
+
+.feature-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
+}
+
+.feature-icon {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.feature-item h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.feature-item p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .kelot-intro {
+        padding: 3rem 0;
+    }
+    
+    .intro-content {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+    }
+    
+    .intro-title {
+        font-size: 2rem;
+    }
+    
+    .intro-title::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .intro-features {
+        gap: 1.5rem;
+    }
+    
+    .feature-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 2rem 1.5rem;
+    }
+    
+    .feature-item h3 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .kelot-intro {
+        padding: 2rem 0;
+    }
+    
+    .intro-description {
+        font-size: 1rem;
+    }
+    
+    .feature-item {
+        padding: 1.5rem 1rem;
+    }
+    
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+</style>
 
 <div class="ranking-header">
     <div class="ranking-icon">
@@ -143,16 +379,21 @@ function echo_product_card($row, $rank, $pdo, $recommend_badge = false, $sale_ba
 <div class="product-list-container">
     <div class="product-list product-slider">
 <?php
-$sql = $pdo->prepare('select * from product as p inner join (
-    select product_id from ranking group by product_id order by 
-    sum(sales_quantity) desc limit 5 ) as top_products on p.id = 
-    top_products.product_id');
+$sql = $pdo->prepare('SELECT p.* FROM product AS p INNER JOIN (
+    SELECT pd.product_id
+    FROM purchase_detail pd
+    INNER JOIN purchase pu ON pu.id = pd.purchase_id
+    WHERE pu.purchase_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY pd.product_id
+    ORDER BY SUM(pd.count) DESC
+    LIMIT 5
+) AS top_products ON p.id = top_products.product_id');
 $sql->execute();
 $products = $sql->fetchAll();
 
 $rank = 1;
 foreach ($products as $row) {
-    echo_product_card($row, $rank, $pdo);
+    echo_simple_product_card($row, $rank, $pdo);
     $rank++;
 }
 ?>
@@ -179,7 +420,7 @@ $recommended_products = $sql->fetchAll();
 $total_recommended_items = count($recommended_products);
 
 foreach ($recommended_products as $row) {
-    echo_product_card($row, '', $pdo, true, false);
+    echo_simple_product_card($row, '', $pdo, true, false);
 }
 ?>
     </div>
@@ -205,7 +446,7 @@ $sale_products = $sql->fetchAll();
 $total_sale_items = count($sale_products);
 
 foreach ($sale_products as $row) {
-    echo_product_card($row, '', $pdo, false, true);
+    echo_simple_product_card($row, '', $pdo, false, true);
 }
 ?>
     </div>

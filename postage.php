@@ -2,7 +2,7 @@
 session_start();
 require 'common.php';
 require 'header.php';
-require 'menu.php';
+
 
 
 
@@ -24,6 +24,22 @@ $region_names = [
 ];
 ?>
 <style>
+    .simple-hero {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        padding: 48px 16px;
+        margin-bottom: 16px;
+    }
+    .simple-hero .hero-inner {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .simple-hero h1 {
+        margin: 0 0 8px 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    .simple-hero p { opacity: .9; margin: 0; }
     .shipping-container {
         text-align: center;
         max-width: 800px;
@@ -60,9 +76,14 @@ $region_names = [
     }
 </style>
 
-<div class="shipping-container">
+<div class="simple-hero">
+    <div class="hero-inner">
+        <h1>配送・送料について</h1>
+        <p>地域別送料と送料無料条件のご案内</p>
+    </div>
+</div>
 
-    <h1>配送・送料について</h1>
+<div class="shipping-container">
 
     <p>
     送料は、お届け先の地域によって異なります。以下の一覧表をご確認ください。

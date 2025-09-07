@@ -2,7 +2,7 @@
 
 <?php require 'common.php'; ?>
 <?php require 'header.php'; ?>
-<?php require 'menu.php'; ?>
+
 
 <div class="container">
     <!-- ページタイトル -->
@@ -101,9 +101,7 @@
 
                     if (isset($_REQUEST['filteritem-del'])) {
                         $targetarray = explode('-',$_REQUEST['filteritem-del']);
-                        $targetrow = key(array_filter($_SESSION['filter'], function($v) use ($targetarray) {
-    return $v['kbn_id'] === $targetarray[0] && $v['master_id'] === $targetarray[1];
-}));
+                        $targetrow = key(array_filter($_SESSION['filter'], fn($v) => $v['kbn_id'] === (int)$targetarray[0] && $v['master_id'] === $targetarray[1]));
                         unset($_SESSION['filter'][$targetrow]);
                         //Indexを詰める
                         $_SESSION['filter'] = array_values($_SESSION['filter']);
@@ -844,6 +842,8 @@
 
                 $products = $sql->fetchAll();
                 $product_count = count($products);
+                // レビュー集計用ステートメントを用意
+                $review_stmt = $pdo->prepare('SELECT COUNT(*) AS cnt, AVG(rating) AS avg_rating FROM review WHERE product_id = ?');
                 ?>
                 <div class="products-header">
                     <div class="result-count">
@@ -977,12 +977,14 @@
                             $sql->bindParam(2, $row['id']);
                             $sql->execute();
                             $campaignrate = $sql->fetch();
+                            $campaignBadge = '';
                             if (($campaignrate)){
                                 $pointsum += (int)($row['price'] * $campaignrate['campaign_point_rate']);
                                 $percentage += $campaignrate['campaign_point_rate'];
+                                $campaignBadge = '<span class="campaign-badge">キャンペーン適用</span>';
                             }
-                        
-                            echo '<p>'. number_format($pointsum,0) .' point (' .($percentage * 100). '%)</p>';
+
+                            echo '<p>'. number_format($pointsum,0) .' point (' .($percentage * 100). '%) ' . $campaignBadge . '</p>';
                         
 
                             // 特徴的なハイライト表示
@@ -1062,9 +1064,12 @@
 
                             echo '</div>';
 
-                            // レビュー評価（仮のデータ）
-                            $rating = rand(35, 50) / 10; // 3.5〜5.0の仮評価
-                            $review_count = rand(10, 200);
+                            // レビュー評価（実データ）
+                            $review_stmt->bindParam(1, $id);
+                            $review_stmt->execute();
+                            $review_data = $review_stmt->fetch(PDO::FETCH_ASSOC);
+                            $review_count = (int)($review_data['cnt'] ?? 0);
+                            $rating = (float)($review_data['avg_rating'] ?? 0);
                             echo '<div class="product-rating">';
                             echo '<div class="stars">';
                             for ($i = 1; $i <= 5; $i++) {
@@ -1091,13 +1096,13 @@
                             }
                             echo '</div>';
 
-                            echo '<div class="product-actions">';
-                            echo '<a href="detail.php?id=', $id, '" class="btn btn-outline">';
-                            echo '<i class="fas fa-info-circle"></i>詳細';
+                            echo '<div class="product-actions" style="text-align:center; padding: 8px 0; gap:8px;">';
+                            echo '<a href="detail.php?id=', $id, '" class="btn" style="display:inline-block; min-width: 140px; height: 40px; line-height: 40px; padding: 0 12px; background: var(--primary-color); color: #fff; border-radius: 10px; font-weight: 600; text-decoration: none; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateX(-6px);">';
+                            echo '<i class="fas fa-info-circle" style="margin-right:8px;"></i>商品詳細へ';
                             echo '</a>';
 
                             if ($row['stock_quantity'] > 0) {
-                                echo '<button class="btn btn-primary add-to-cart" data-product-id="', $id, '">';
+                                echo '<button class="btn btn-primary add-to-cart" data-product-id="', $id, '" style="display:inline-block; min-width: 140px; height: 40px; line-height: 40px; padding: 0 12px; border-radius: 10px; transform: translateX(-6px);">';
                                 echo '<i class="fas fa-cart-plus"></i>カートに追加';
                                 echo '</button>';
                             } else {

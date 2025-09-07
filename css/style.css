@@ -1,3 +1,143 @@
+.campaign-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #92400e;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+}
+
+.campaign-badge::before {
+    content: "★";
+    color: #d97706;
+    font-size: 0.85rem;
+}
+
+
+/* === Home Hero (Top Section) === */
+
+.home-hero {
+    margin: 16px 0 28px;
+    background: #f3f4f6;
+    border-radius: 16px;
+    padding: 32px 24px;
+}
+
+.home-hero .hero-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.home-hero .hero-text h1 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    line-height: 1.25;
+}
+
+.home-hero .hero-subtitle {
+    margin: 0 0 16px 0;
+    color: #555;
+    font-size: 15px;
+}
+
+.home-hero .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.home-hero .btn-hero {
+    display: inline-block;
+    min-width: 200px;
+    height: 48px;
+    line-height: 48px;
+    padding: 0 18px;
+    background: var(--primary-color);
+    color: #fff;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.home-hero .btn-hero:hover {
+    opacity: 0.95;
+}
+
+.home-hero .hero-visual {
+    flex: 0 0 auto;
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 56px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 900px) {
+    .home-hero {
+        padding: 24px 18px;
+    }
+    .home-hero .hero-content {
+        gap: 18px;
+    }
+    .home-hero .hero-text h1 {
+        font-size: 24px;
+    }
+    .home-hero .hero-visual {
+        width: 96px;
+        height: 96px;
+        font-size: 42px;
+    }
+}
+
+@media (max-width: 680px) {
+    .home-hero .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .home-hero .hero-actions {
+        width: 100%;
+    }
+    .home-hero .btn-hero {
+        width: 100%;
+        min-width: 0;
+    }
+    .home-hero .hero-visual {
+        width: 72px;
+        height: 72px;
+        font-size: 32px;
+    }
+}
+
+
+/* Center main sections */
+
+.ranking-header,
+.product-list-container {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* removed temporary KELOT Home overrides */
+
 :root {
     --primary-color: #2563eb;
     --primary-dark: #1d4ed8;

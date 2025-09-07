@@ -520,6 +520,29 @@ if (isset($_SESSION['product_add_success'])) {
                         <?php endfor; ?>
                     </div>
                 </div>
+
+                <!-- 商品説明（detail.php 用） -->
+                <div class="admin-card">
+                    <h3><i class="fas fa-file-alt"></i> 商品説明（詳細ページ表示）</h3>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">商品概要（短文）</label>
+                        <textarea name="product_overview" class="admin-input" rows="4" placeholder="例: 近未来的なデザインと49gの軽量ボディ。競技レベルの精度と応答性を両立。"><?= h($product['product_overview'] ?? '') ?></textarea>
+                        <div class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            商品ページ冒頭の短い説明です（2〜4行推奨）。
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">商品詳細レビュー（段落は「■」で区切り）</label>
+                        <textarea name="product_detailed_review" class="admin-input" rows="14" placeholder="『■ 見出し』で段落分割し、本文を続けて入力してください。"><?= h($product['product_detailed_review'] ?? '') ?></textarea>
+                        <div class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            detail.php では「■」を見出しとして解釈して段落表示します。
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="sidebar-content">

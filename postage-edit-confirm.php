@@ -41,7 +41,7 @@ if (!isset($_SESSION['url'][1]) || preg_match('/postage-edit-check.php$/', $_SES
                                     </tr>
                                 </thead>
                                 <tbody>
-                    END;
+END;
                         foreach ($_SESSION['pos-region'] as $row) {
                             echo '<tr>';
                             echo '<td class="admin-text-center"><strong>' . $row[1] . '</strong></td>';

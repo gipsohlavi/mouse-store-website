@@ -62,7 +62,7 @@ $_SESSION['url'][0] =  $_SERVER['REQUEST_URI'];
                     <?php if (count($tax_rates) > 0): ?>
                         <?php foreach ($tax_rates as $row): ?>
                             <tr>
-                                <form action="tax-edit-check.php" method="post">
+                                <form action="tax-edit-confirm.php" method="post">
                                     <input type="hidden" name="tax-id" value="<?= $row['tax_id'] ?>">
                                     <input type="hidden" name="ori-tax" value="<?= $row['tax'] ?>">
                                     <input type="hidden" name="ori-start" value="<?= $row['tax_start_date'] ?>">
@@ -149,7 +149,7 @@ $_SESSION['url'][0] =  $_SERVER['REQUEST_URI'];
         }
         ?>
 
-        <form action="tax-edit-check.php" method="post" autocomplete="off">
+        <form action="tax-edit-confirm.php" method="post" autocomplete="off">
             <div class="add-tax-container">
                 <table class="admin-table add-table">
                     <thead>
@@ -229,7 +229,7 @@ $_SESSION['url'][0] =  $_SERVER['REQUEST_URI'];
     // フォーム送信前のバリデーション
     document.addEventListener('DOMContentLoaded', function() {
         // 税率追加フォームのバリデーション
-        const addForm = document.querySelector('form[action="tax-edit-check.php"]:last-of-type');
+        const addForm = document.querySelector('form[action="tax-edit-confirm.php"]:last-of-type');
         if (addForm) {
             addForm.addEventListener('submit', function(e) {
                 const taxRate = this.querySelector('[name="tax-rate"]').value.trim();
@@ -250,7 +250,7 @@ $_SESSION['url'][0] =  $_SERVER['REQUEST_URI'];
         }
 
         // 変更フォームの確認
-        const changeForms = document.querySelectorAll('form[action="tax-edit-check.php"]:not(:last-of-type)');
+        const changeForms = document.querySelectorAll('form[action="tax-edit-confirm.php"]:not(:last-of-type)');
         changeForms.forEach(form => {
             form.addEventListener('submit', function(e) {
                 const submitButton = e.submitter;

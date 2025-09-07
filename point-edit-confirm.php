@@ -23,7 +23,7 @@ require 'admin-menu.php';
     </div>
 
     <div class="admin-card">
-        <form action="point-edit-update.php" method="post">
+        <form action="point-edit-finish.php" method="post">
             <?php
             if (isset($_SESSION['point'])) {
                 switch ($_SESSION['point']) {
@@ -123,7 +123,7 @@ require 'admin-menu.php';
                         echo '<button type="submit" formaction="point-edit.php" class="admin-btn admin-btn-secondary">';
                         echo '<i class="fas fa-arrow-left"></i> 戻る';
                         echo '</button>';
-                        echo '<button type="submit" class="admin-btn admin-btn-danger">';
+                        echo '<button type="submit" class="admin-btn admin-btn-danger" formaction="point-edit-finish.php">';
                         echo '<i class="fas fa-trash"></i> 削除実行';
                         echo '</button>';
                         echo '</div>';
@@ -167,7 +167,7 @@ require 'admin-menu.php';
 
                     //キャンペーン該当商品の削除
                     case 'pcitem-del':
-                    header('Location: point-edit-update.php');
+                    header('Location: point-edit-finish.php');
                 }
             }
             ?>

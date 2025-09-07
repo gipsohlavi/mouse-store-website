@@ -62,7 +62,7 @@ if (isset($_SESSION['postage'])) {
                 $sql->bindParam(2, $_SESSION['post-terms'][2]);
                 $sql->bindParam(3, $_SESSION['post-terms'][3]);
                 $sql->bindParam(4, $today);
-                $sql->bindParam(5, $postage_fee_free_id);
+                $sql->bindParam(5, $_SESSION['post-terms'][0]);
                 $sql->execute();
 
                 break;
@@ -78,13 +78,13 @@ if (isset($_SESSION['postage'])) {
 
             //キャンペーン送料の追加
             case 'posterms-add':
-                $sql = $pdo->query('SELECT MAX(postage_fee_free_id) FROM postage_free');
+                $sql = $pdo->query('SELECT IFNULL(MAX(postage_fee_free_id), 0) + 1 AS next_id FROM postage_free');
                 $sql->execute();
                 $data = $sql->fetch();
-                $_SESSION['post-terms'][0] = $data[0] + 1;
+                $_SESSION['post-terms'][0] = (int)$data['next_id'];
                 $sql = $pdo->prepare('INSERT INTO postage_free 
-                                    (postage_fee_free_id, postage_fee_free, start_date, end_date, ins_date)
-                                    VALUES (?, ?, ?, ?, ?)');
+                                    (postage_fee_free_id, postage_fee_free, start_date, end_date, del_kbn, ins_date)
+                                    VALUES (?, ?, ?, ?, 0, ?)');
                 $sql->bindParam(1, $_SESSION['post-terms'][0]);
                 $sql->bindParam(2, $_SESSION['post-terms'][1]);
                 $sql->bindParam(3, $_SESSION['post-terms'][2]);

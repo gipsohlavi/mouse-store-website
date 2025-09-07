@@ -1,7 +1,6 @@
 <?php session_start(); ?>
 <?php require 'common.php'; ?>
 <?php require 'header.php'; ?>
-<?php require 'menu.php'; ?>
 <?php require 'review-list.php'; ?>
 
 <?php
@@ -98,16 +97,14 @@ $sql = $pdo->prepare('
     FROM point_campaign pc
     INNER JOIN campaign_target ct ON ct.point_campaign_id = pc.point_campaign_id 
     WHERE pc.point_campaign_id != ? 
-    AND pc.del_kbn = 0 
-    AND pc.start_date <= ?
-    AND pc.end_date > ?
-    AND ct.target_id = ?
+      AND pc.del_kbn = 0 
+      AND pc.start_date <= NOW()
+      AND (pc.end_date IS NULL OR pc.end_date > NOW())
+      AND ct.target_id = ?
     LIMIT 1
 ');
 $sql->bindParam(1, $point_campaign_id);
-$sql->bindParam(2, $today);
-$sql->bindParam(3, $today);
-$sql->bindParam(4, $product['id']);
+$sql->bindParam(2, $product['id']);
 $sql->execute();
 $campaignrate = $sql->fetch();
 
@@ -1076,6 +1073,9 @@ if ($campaignrate) {
                             <i class="fas fa-coins points-icon"></i>
                             獲得ポイント
                             <span class="points-percentage"><?= ($percentage * 100) ?>%</span>
+                            <?php if ($campaignrate): ?>
+                                <span class="campaign-badge">キャンペーン適用</span>
+                            <?php endif; ?>
                         </div>
                         <div class="points-value">
                             <?= number_format($pointsum, 0) ?> <span style="font-size: 0.8em;">point</span>

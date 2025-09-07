@@ -305,7 +305,12 @@ $tax_rates = $tax_sql->fetchAll();
                                 <td class="admin-text-center">
                                     <?php
                                     // 送料情報を取得（簡易実装）
-                                    $postage = $row['postage_id'] > 0 ? '有料' : '無料';
+                                    $sql = $pdo->prepare('SELECT postage_fee_free FROM postage_free 
+                                                        WHERE postage_fee_free_id = ?');    
+                                    $sql->bindParam(1, $row['postage_free_id']);
+                                    $sql->execute();
+                                    $postage_free = $sql->fetch();
+                                    $postage = $row['grand_total'] > $postage_free ? '有料' : '無料';
                                     ?>
                                     <span class="postage-badge <?= $row['postage_id'] > 0 ? 'paid' : 'free' ?>">
                                         <?= $postage ?>

@@ -32,6 +32,11 @@ if (!empty($_SESSION['error'])) {
 
 
 // 顧客のデフォルト配送先情報を取得
+// 直アクセスやカートからの遷移ではデフォルト住所を優先し、
+// 配送先選択画面からの遷移（preserve=1）のときのみ前回選択を維持
+if (!isset($_GET['preserve'])) {
+    unset($_SESSION['selected_shipping_address']);
+}
 $selected_address_id = $_SESSION['selected_shipping_address'] ?? null;
 
 if ($selected_address_id) {

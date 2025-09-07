@@ -47,7 +47,7 @@ try {
     $_SESSION['message'] = '配送先「' . h($selected_address['address_name']) . '」を選択しました。';
     
     // 購入手続きページにリダイレクト
-    header('Location: purchase-input.php');
+    header('Location: purchase-input.php?preserve=1');
     exit;
     
 } catch (Exception $e) {

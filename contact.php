@@ -2,7 +2,7 @@
 session_start();
 require 'common.php';
 require 'header.php';
-require 'menu.php';
+/* menu.php は不要のため参照を削除 */
 ?>
 <style>
     .contact-container {

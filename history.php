@@ -1,7 +1,7 @@
 <?php session_start(); ?>
 <?php require 'common.php'; ?>
 <?php require 'header.php'; ?>
-<?php require 'menu.php'; ?>
+
 
 <div class="container">
     <div class="page-header">
@@ -38,19 +38,31 @@
             echo '<div class="purchase-history">';
             
             foreach ($purchases as $row_purchase) {
-                // 購入時の配送先情報を取得（購入時点での情報）
+                // 購入時の配送先情報を取得（実際の購入時点での情報）
                 $shipping_info_sql = $pdo->prepare('
                     SELECT sa.prefecture, sa.city, sa.address_line1, sa.address_line2, 
                            sa.region_id, sa.remote_island_check, sa.recipient_name
                     FROM shipping_addresses sa 
-                    WHERE sa.customer_id = ? AND sa.is_default = 1
+                    WHERE sa.id = ?
                     LIMIT 1
                 ');
-                $shipping_info_sql->bindParam(1, $_SESSION['customer']['id'], PDO::PARAM_INT);
-                $shipping_info_sql->execute();
+                $shipping_info_sql->execute([$row_purchase['address_id']]);
                 $shipping_info = $shipping_info_sql->fetch();
-                
-                // 送料計算（購入時点での料金を再現）
+
+                // address_idが0または無効な場合のフォールバック
+                if (!$shipping_info) {
+                    $shipping_info_sql = $pdo->prepare('
+                        SELECT sa.prefecture, sa.city, sa.address_line1, sa.address_line2, 
+                               sa.region_id, sa.remote_island_check, sa.recipient_name
+                        FROM shipping_addresses sa 
+                        WHERE sa.customer_id = ? AND sa.is_default = 1
+                        LIMIT 1
+                    ');
+                    $shipping_info_sql->execute([$_SESSION['customer']['id']]);
+                    $shipping_info = $shipping_info_sql->fetch();
+                }
+
+                // 配送料計算の初期化
                 $shipping_fee = 0;
                 $remote_island_fee = 0;
                 $total_shipping_fee = 0;
@@ -63,8 +75,7 @@
                         FROM purchase_detail 
                         WHERE purchase_id = ?
                     ');
-                    $cart_subtotal_sql->bindParam(1, $row_purchase['id'], PDO::PARAM_INT);
-                    $cart_subtotal_sql->execute();
+                    $cart_subtotal_sql->execute([$row_purchase['id']]);
                     $cart_subtotal_result = $cart_subtotal_sql->fetch();
                     $cart_subtotal = $cart_subtotal_result ? $cart_subtotal_result['subtotal'] : 0;
                     
@@ -77,34 +88,45 @@
                     $is_free_shipping = ($free_shipping_threshold > 0 && $cart_subtotal >= $free_shipping_threshold);
                     
                     if (!$is_free_shipping) {
-                        // 基本送料
-                        if ($shipping_info['region_id']) {
-                            $postage_sql = $pdo->prepare('SELECT postage_fee FROM postage WHERE region_id = ? AND start_date <= NOW() AND (end_date IS NULL OR end_date >= NOW()) ORDER BY start_date DESC LIMIT 1');
-                            $postage_sql->bindParam(1, $shipping_info['region_id'], PDO::PARAM_INT);
-                            $postage_sql->execute();
-                            $postage_info = $postage_sql->fetch();
-                            if ($postage_info) {
-                                $shipping_fee = $postage_info['postage_fee'];
+                        // 地域IDを都道府県名から動的解決（保存region_idの不整合対策）
+                        $resolved_region_id = $shipping_info['region_id'];
+                        try {
+                            $pref_stmt = $pdo->prepare('SELECT master_id FROM master WHERE kbn = 12 AND name = ? LIMIT 1');
+                            $pref_stmt->execute([$shipping_info['prefecture']]);
+                            $pref_id = $pref_stmt->fetchColumn();
+                            if ($pref_id) {
+                                $region_stmt = $pdo->prepare('SELECT region_id FROM region WHERE prefectures_id = ? LIMIT 1');
+                                $region_stmt->execute([$pref_id]);
+                                $resolved = $region_stmt->fetchColumn();
+                                if ($resolved) { $resolved_region_id = (int)$resolved; }
                             }
+                        } catch (Exception $e) { /* noop */ }
+
+                        // 基本送料（購入日時点の有効料金）
+                        $postage_sql = $pdo->prepare('SELECT postage_fee FROM postage WHERE region_id = ? AND start_date <= ? AND (end_date IS NULL OR end_date > ?) ORDER BY start_date DESC LIMIT 1');
+                        $postage_sql->execute([$resolved_region_id, $row_purchase['purchase_date'], $row_purchase['purchase_date']]);
+                        $postage_info = $postage_sql->fetch();
+                        if ($postage_info) {
+                            $shipping_fee = $postage_info['postage_fee'];
                         }
                         
-                        // 離島追加料金
+                        // 離島追加料金（購入日時点の有効料金）
                         if ($shipping_info['remote_island_check']) {
-                            $remote_sql = $pdo->prepare('SELECT remote_island_fee FROM postage_remote_island WHERE start_date <= CURDATE() AND (end_date IS NULL OR end_date >= CURDATE()) ORDER BY start_date DESC LIMIT 1');
-                            $remote_sql->execute();
+                            $remote_sql = $pdo->prepare('SELECT remote_island_fee FROM postage_remote_island WHERE start_date <= ? AND (end_date IS NULL OR end_date > ?) ORDER BY start_date DESC LIMIT 1');
+                            $remote_sql->execute([$row_purchase['purchase_date'], $row_purchase['purchase_date']]);
                             $remote_info = $remote_sql->fetch();
                             if ($remote_info) {
                                 $remote_island_fee = $remote_info['remote_island_fee'];
                             }
                         }
-                        
-                        $total_shipping_fee = $shipping_fee + $remote_island_fee;
                     }
+                    
+                    $total_shipping_fee = $shipping_fee + $remote_island_fee;
                 }
                 
                 echo '<div class="purchase-card">';
                 echo '<div class="purchase-header">';
-                echo '<h3>購入日：', h($row_purchase['purchase_date']), '</h3>';
+                echo '<h3>購入日時：', date('Y年m月d日 H:i', strtotime($row_purchase['purchase_date'])), '</h3>';
                 echo '<div class="purchase-meta">';
                 echo '<div class="order-id">注文番号: KEL', str_pad($row_purchase['id'], 6, '0', STR_PAD_LEFT), '</div>';
                 if ($shipping_info) {
@@ -112,7 +134,11 @@
                     if ($shipping_info['address_line2']) {
                         $shipping_address .= ' ' . $shipping_info['address_line2'];
                     }
-                    echo '<div class="shipping-address"><i class="fas fa-map-marker-alt"></i> ', h($shipping_address), '</div>';
+                    echo '<div class="shipping-address">';
+                    echo '<i class="fas fa-map-marker-alt"></i> ';
+                    echo h($shipping_info['recipient_name']) . ' 様 - ';
+                    echo h($shipping_address);
+                    echo '</div>';
                 }
                 echo '</div>';
                 echo '</div>';

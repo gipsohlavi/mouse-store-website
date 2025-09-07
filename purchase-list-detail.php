@@ -79,24 +79,88 @@ $tax_details = $tax_sql->fetchAll();
 // 送料情報取得
 $postage_total = 0;
 $postage_info = null;
+// 住所の都道府県名から地域IDを動的解決（保存値が誤っている可能性に対処）
+$resolved_region_id = $purchase['region_id'];
+try {
+    $pref_stmt = $pdo->prepare('SELECT master_id FROM master WHERE kbn = 12 AND name = ? LIMIT 1');
+    $pref_stmt->execute([$purchase['prefecture']]);
+    $pref_id = $pref_stmt->fetchColumn();
+    if ($pref_id) {
+        $region_stmt = $pdo->prepare('SELECT region_id FROM region WHERE prefectures_id = ? LIMIT 1');
+        $region_stmt->execute([$pref_id]);
+        $resolved = $region_stmt->fetchColumn();
+        if ($resolved) { $resolved_region_id = (int)$resolved; }
+    }
+} catch (Exception $e) { /* noop */ }
+
+// 購入時点で有効な送料（地域別）を取得
 if ($purchase['postage_id'] > 0) {
     $postage_sql = $pdo->prepare('
-        SELECT p.postage_fee, r.region_id
+        SELECT p.postage_fee
         FROM postage p
-        INNER JOIN region r ON p.region_id = r.region_id
         WHERE p.postage_id = ?
+          AND p.region_id = ?
+          AND p.start_date <= ?
+          AND (p.end_date IS NULL OR p.end_date > ?)
+        LIMIT 1
     ');
-    $postage_sql->execute([$purchase['postage_id']]);
+    $postage_sql->execute([
+        $purchase['postage_id'],
+        $resolved_region_id,
+        $purchase['purchase_date'],
+        $purchase['purchase_date']
+    ]);
     $postage_info = $postage_sql->fetch();
+
+    // フォールバック1: 期間条件を外して照合
+    if (!$postage_info) {
+        $postage_sql = $pdo->prepare('
+            SELECT p.postage_fee
+            FROM postage p
+            WHERE p.postage_id = ?
+              AND p.region_id = ?
+            ORDER BY p.start_date DESC
+            LIMIT 1
+        ');
+        $postage_sql->execute([
+            $purchase['postage_id'],
+            $resolved_region_id
+        ]);
+        $postage_info = $postage_sql->fetch();
+    }
+
+    // フォールバック2: postage_id が不明な場合、地域の最新料金を採用
+    if (!$postage_info) {
+        $postage_sql = $pdo->prepare('
+            SELECT p.postage_fee
+            FROM postage p
+            WHERE p.region_id = ?
+            ORDER BY p.start_date DESC
+            LIMIT 1
+        ');
+        $postage_sql->execute([
+            $resolved_region_id
+        ]);
+        $postage_info = $postage_sql->fetch();
+    }
 }
 
+// 離島加算（購入時点の有効料金）
 $remote_postage_info = null;
 if ($purchase['remort_island_fee_id'] > 0) {
     $remote_postage_sql = $pdo->prepare('
         SELECT remote_island_fee
         FROM postage_remote_island
+        WHERE remote_island_fee_id = ?
+          AND start_date <= ?
+          AND (end_date IS NULL OR end_date > ?)
+        LIMIT 1
     ');
-    $remote_postage_sql->execute();
+    $remote_postage_sql->execute([
+        $purchase['remort_island_fee_id'],
+        $purchase['purchase_date'],
+        $purchase['purchase_date']
+    ]);
     $remote_postage_info = $remote_postage_sql->fetch();
 }
 
@@ -114,6 +178,13 @@ $total_tax = 0;
 foreach ($tax_details as $tax) {
     $total_tax += $tax['tax_amount'];
 }
+
+
+$sql = $pdo->prepare('SELECT postage_fee_free FROM postage_free 
+                    WHERE postage_fee_free_id = ?');
+$sql->bindParam(1, $purchase['postage_free_id']);
+$sql->execute();
+$postage_free = $sql->fetch();
 ?>
 
 <div class="admin-container">
@@ -188,8 +259,9 @@ foreach ($tax_details as $tax) {
                                 配送料
                             </div>
                             <div class="summary-value">
-                                <?php if ($purchase['postage_id'] > 0 && $postage_info): ?>
+                                <?php if ($purchase['grand_total'] > $postage_free): ?>
                                     ¥<?= number_format($postage_info['postage_fee']) ?>
+                                        <?php echo $purchase['grand_total'] .'&' . $postage_free; ?>
                                     <?php if ($purchase['remort_island_fee_id']): ?>
                                         <span class="island-fee">+離島料金</span>
                                     <?php endif; ?>
@@ -301,7 +373,7 @@ foreach ($tax_details as $tax) {
                         </div>
                     <?php endif; ?>
 
-                    <?php if ($purchase['postage_id'] > 0 && $postage_info): ?>
+                    <?php if ($purchase['grand_total'] > $postage_free): ?>
                         <div class="breakdown-item">
                             <span class="breakdown-label">配送料</span>
                             <span class="breakdown-value">¥<?= number_format($postage_info['postage_fee']) ?></span>

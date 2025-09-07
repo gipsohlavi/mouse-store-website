@@ -2,9 +2,18 @@
 session_start();
 require 'common.php';
 require 'header.php';
-require 'menu.php';
+
 ?>
 <style>
+    .simple-hero {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        padding: 48px 16px;
+        margin-bottom: 16px;
+    }
+    .simple-hero .hero-inner { max-width: 1000px; margin: 0 auto; }
+    .simple-hero h1 { margin: 0 0 8px 0; font-size: 1.8rem; font-weight: 700; }
+    .simple-hero p { opacity: .9; margin: 0; }
     .privacy-policy-container {
         text-align: center;
         max-width: 800px;
@@ -37,9 +46,14 @@ require 'menu.php';
     }
 </style>
 
-<div class="privacy-policy-container">
+<div class="simple-hero">
+    <div class="hero-inner">
+        <h1>プライバシーポリシー</h1>
+        <p>お客様の個人情報の取り扱いについて</p>
+    </div>
+</div>
 
-    <h1>プライバシーポリシー</h1>
+<div class="privacy-policy-container">
 
     <p>
     当サイトを運営する**株式会社KELOT**（以下「当社」といいます。）は、お客様の個人情報保護の重要性について深く認識し、以下の方針に基づき、個人情報の適切な取り扱いに努めます。

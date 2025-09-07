@@ -14,22 +14,12 @@
                     </div>
                 </div>
 
-                <div class="footer-section">
-                    <h3>商品カテゴリ</h3>
-                    <a href="product.php?category=gaming">ゲーミングマウス</a>
-                    <a href="product.php?category=gaming">ゲーミングマウス</a>
-                    <a href="product.php?category=gaming">ゲーミングマウス</a>
-                    <a href="product.php?category=gaming">ゲーミングマウス</a>
-                    <a href="product.php?category=gaming">ゲーミングマウス</a>
-                </div>
+                
 
                 <div class="footer-section">
                     <h3>サポート</h3>
                     <a href="postage.php">送料について</a>
                     <a href="q&a.php">よくある質問</a>
-                    <a href="contact.php">お問い合わせ</a>
-                    <a href="contact.php">お問い合わせ</a>
-                    <a href="contact.php">お問い合わせ</a>
                 </div>
 
                 <div class="footer-section">

@@ -88,6 +88,8 @@ try {
         'recommend' => isset($_POST['recommend']) ? 1 : 0,
         'on_sale' => isset($_POST['on_sale']) ? 1 : 0,
         'for_gift' => isset($_POST['for_gift']) ? 1 : 0,
+        'product_overview' => isset($_POST['product_overview']) ? trim($_POST['product_overview']) : null,
+        'product_detailed_review' => isset($_POST['product_detailed_review']) ? trim($_POST['product_detailed_review']) : null,
         'purchase_quantity' => 0,
         'sales_quantity' => 0,
         'created_day' => date('Y-m-d H:i:s'),

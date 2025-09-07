@@ -1,7 +1,6 @@
 <?php session_start(); ?>
 <?php require 'common.php'; ?>
 <?php require 'header.php'; ?>
-<?php require 'menu.php'; ?>
 <?php
 if (isset($_SESSION['customer'])) {
 	$sql = $pdo->prepare(

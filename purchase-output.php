@@ -142,9 +142,9 @@ try {
     
     // 購入データの挿入
     $purchase_sql = $pdo->prepare('
-        INSERT INTO purchase (customer_id, purchase_date, grand_total, get_point, use_point, postage_id, postage_free_id, remort_island_fee_id) 
-        VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?)
-    ');
+    INSERT INTO purchase (customer_id, address_id, purchase_date, grand_total, get_point, use_point, postage_id, postage_free_id, remort_island_fee_id) 
+    VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?)
+');
     
     // ポイント付与計算
     $get_points = 0;
@@ -183,20 +183,53 @@ try {
         $get_points += $product_points;
     }
     
-    // 変数に値を代入してからbindParam()を使用
-    $postage_free_id = 1;
-    $remote_island_fee_id = $customer_remote_island ? 1 : 0;
-    
-    $purchase_sql->bindParam(1, $customer_id);
-    $purchase_sql->bindParam(2, $grand_total);
-    $purchase_sql->bindParam(3, $get_points);
-    $purchase_sql->bindParam(4, $use_points);
-    $purchase_sql->bindParam(5, $customer_region_id);
-    $purchase_sql->bindParam(6, $postage_free_id);
-    $purchase_sql->bindParam(7, $remote_island_fee_id);
-    $purchase_sql->execute();
-    
+// 配送先情報の取得（購入時点での情報を確実に保存）
+$selected_address_id = $_SESSION['selected_shipping_address'] ?? null;
+
+if (!$selected_address_id) {
+    // デフォルト配送先を取得
+    $default_addr_sql = $pdo->prepare('SELECT id FROM shipping_addresses WHERE customer_id = ? AND is_default = 1 LIMIT 1');
+    $default_addr_sql->execute([$customer_id]);
+    $default_addr = $default_addr_sql->fetch();
+    $selected_address_id = $default_addr ? $default_addr['id'] : 0;
+}
+
+// 選択された配送先の詳細を取得
+$shipping_sql = $pdo->prepare('
+    SELECT sa.*, r.region_id 
+    FROM shipping_addresses sa
+    LEFT JOIN region r ON r.prefectures_id = (
+        SELECT master_id FROM master WHERE kbn = 12 AND name = sa.prefecture
+    )
+    WHERE sa.id = ? AND sa.customer_id = ?
+');
+$shipping_sql->execute([$selected_address_id, $customer_id]);
+$shipping_info = $shipping_sql->fetch();
+
+// 変数に値を代入してからbindParam()を使用
+$sql = $pdo->prepare('SELECT postage_fee_free_id FROM postage_free 
+                    WHERE (start_date <= ? 
+                    AND end_date > ?
+                    AND del_kbn = 0 ) 
+                    OR end_date IS NULL 
+                    ORDER BY postage_fee_free_id DESC LIMIT 1');
+$sql->bindParam(1, $today);
+$sql->bindParam(2, $today);
+$sql->execute();
+$postage_free_id = $sql->fetch();
+$remote_island_fee_id = $customer_remote_island ? 1 : 0;
+
+$purchase_sql->bindParam(1, $customer_id);
+$purchase_sql->bindParam(2, $selected_address_id);  // ←これを追加
+$purchase_sql->bindParam(3, $grand_total);
+$purchase_sql->bindParam(4, $get_points);
+$purchase_sql->bindParam(5, $use_points);
+$purchase_sql->bindParam(6, $customer_region_id);
+$purchase_sql->bindParam(7, $postage_free_id[0]);
+$purchase_sql->bindParam(8, $remote_island_fee_id);  // ←番号がずれるので修正
+$purchase_sql->execute();
     $purchase_id = $pdo->lastInsertId();
+
     
     // 購入詳細の挿入
     $detail_counter = 1;
@@ -908,39 +941,48 @@ require 'header.php';
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
-    padding: 0;
-    background: none;
-    box-shadow: none;
-    border: none;
+    padding: 30px;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    margin-bottom: 30px;
 }
 
 .info-card {
-    background: white;
+    background: #f8fafc;
     border-radius: 12px;
-    padding: 25px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 30px;  /* パディングを増やす */
+    border: 1px solid #e2e8f0;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .info-title {
-    font-size: 1.2rem;
+    font-size: 1.3rem;  /* タイトルを大きく */
     font-weight: 600;
     color: #1f2937;
-    margin-bottom: 15px;
+    margin-bottom: 20px;  /* 余白を増やす */
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid #f3f4f6;
-    padding-bottom: 10px;
+    gap: 10px;
+    border-bottom: 2px solid #e5e7eb;  /* 境界線を追加 */
+    padding-bottom: 12px;
 }
 
 .info-content p {
-    margin-bottom: 8px;
-    color: #6b7280;
+    margin-bottom: 12px;  /* 行間を広げる */
+    color: #374151;  /* 文字色を濃く */
+    font-size: 1rem;  /* フォントサイズを大きく */
+    line-height: 1.6;  /* 行高を調整 */
 }
 
 .info-content strong {
     color: #1f2937;
+    font-weight: 600;
+    font-size: 1.05rem;  /* 強調部分を少し大きく */
 }
 
 .free-shipping-notice {
@@ -1033,10 +1075,20 @@ require 'header.php';
 }
 
 /* 紙吹雪のアニメーション */
-.confetti {
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+.confetti-piece {
     position: absolute;
-    width: 100%;
-    height: 100%;
+    animation: confettiFall linear infinite;
     pointer-events: none;
 }
 
@@ -1100,6 +1152,89 @@ require 'header.php';
         font-size: 2rem;
     }
 }
+
+/* 配送・支払い情報を読みやすく */
+.delivery-payment-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border: none;
+    margin-bottom: 30px;
+}
+
+.info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* 2つ目のカードは少し違う色に */
+.info-card:nth-child(2) {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+}
+
+.info-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 12px;
+}
+
+.info-title i {
+    color: #6b7280;
+    font-size: 1.2rem;
+}
+
+.info-content p {
+    margin-bottom: 12px;
+    color: #374151;
+    font-size: 1rem;
+    line-height: 1.6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-content strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* 値の部分を少し強調 */
+.info-content p strong:last-child {
+    color: #2563eb;
+    font-weight: 700;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .delivery-payment-info {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .info-card {
+        padding: 25px;
+    }
+}
 </style>
 
 <script>
@@ -1127,7 +1262,7 @@ function createConfetti() {
     
     for (let i = 0; i < 60; i++) {
         const confetti = document.createElement('div');
-        confetti.style.position = 'absolute';
+        confetti.className = 'confetti-piece';
         confetti.style.width = Math.random() * 8 + 6 + 'px';
         confetti.style.height = Math.random() * 8 + 6 + 'px';
         confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -1135,7 +1270,6 @@ function createConfetti() {
         confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
         confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
         confetti.style.animationDelay = Math.random() * 2 + 's';
-        confetti.style.animation = 'fall linear infinite';
         
         confettiContainer.appendChild(confetti);
     }

@@ -82,7 +82,6 @@ if ($is_ajax) {
 
 // 通常のリクエストの場合（既存の処理）
 require 'header.php';
-require 'menu.php';
 
 if (isset($_SESSION['customer'])) {
     // 既存のお気に入り確認
